@@ -89,7 +89,6 @@ pipeline {
                 '''
             }
         }
-        /*
         stage('Prod E2E') {           
             agent {
                 docker {
@@ -98,7 +97,7 @@ pipeline {
                 }
             }
             environment {
-                CI_ENVIORNMENT_URL = 'https://joyful-baklava-3280b2.netlify.app'
+                CI_ENVIRONMENT_URL = 'https://joyful-baklava-3280b2.netlify.app'
             }
             steps {
                 sh '''
@@ -111,6 +110,5 @@ pipeline {
                 }
             }
         }
-        */
     }
 }
