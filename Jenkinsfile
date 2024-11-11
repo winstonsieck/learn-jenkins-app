@@ -90,6 +90,7 @@ pipeline {
                 '''
             }
         }
+        /*
         stage('Approval') {
             steps {
                 timeout(15) {
@@ -97,7 +98,7 @@ pipeline {
                 }
             }
         }
-
+        */
         stage('Deploy Prod') {
             agent {
                 docker {
