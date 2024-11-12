@@ -7,7 +7,6 @@ pipeline {
     }
 
     stages {
-
         stage('Build') {
             agent {
                 docker {
@@ -17,6 +16,7 @@ pipeline {
             }
             steps {
                 sh '''
+                    # echo 'small change'
                     ls -la
                     node --version
                     npm --version
@@ -29,17 +29,17 @@ pipeline {
 
         stage('Tests') {
             parallel {
-                stage('Unit tests') {
+                stage('Unit Tests') {
                     agent {
                         docker {
                             image 'node:18-alpine'
                             reuseNode true
                         }
                     }
-
                     steps {
                         sh '''
-                            #test -f build/index.html
+                            echo 'Test Stage...'
+                            test -f build/index.html
                             npm test
                         '''
                     }
@@ -49,34 +49,30 @@ pipeline {
                         }
                     }
                 }
-
                 stage('E2E') {
                     agent {
                         docker {
-                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            image 'mcr.microsoft.com/playwright:v1.48.1-noble'
                             reuseNode true
                         }
                     }
-
                     steps {
                         sh '''
                             npm install serve
                             node_modules/.bin/serve -s build &
                             sleep 10
-                            npx playwright test  --reporter=html
+                            npx playwright test --reporter=html
                         '''
                     }
-
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright Local', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
                 }
             }
         }
-
-        stage('Deploy staging') {
+        stage('Deploy Staging') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -94,43 +90,40 @@ pipeline {
                 script {
                     env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true)
                 }
-            }
+             }
         }
-
-        stage('Staging E2E') {
+        stage('Staging E2E') {           
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'mcr.microsoft.com/playwright:v1.48.1-noble'
                     reuseNode true
                 }
             }
-
             environment {
                 CI_ENVIRONMENT_URL = "${env.STAGING_URL}"
             }
-
             steps {
                 sh '''
-                    npx playwright test  --reporter=html
+                    echo "The URL is: $CI_ENVIRONMENT_URL"
+                    npx playwright test --reporter=html
                 '''
             }
-
             post {
                 always {
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
                 }
             }
         }
-
+        /*
         stage('Approval') {
             steps {
-                timeout(time: 15, unit: 'MINUTES') {
-                    input message: 'Do you wish to deploy to production?', ok: 'Yes, I am sure!'
+                timeout(15) {
+                    input 'Do you wish to deploy to production?'
                 }
             }
         }
-
-        stage('Deploy prod') {
+        */
+        stage('Deploy Prod') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -147,25 +140,21 @@ pipeline {
                 '''
             }
         }
-
-        stage('Prod E2E') {
+        stage('Prod E2E') {           
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'mcr.microsoft.com/playwright:v1.48.1-noble'
                     reuseNode true
                 }
             }
-
             environment {
-                CI_ENVIRONMENT_URL = 'YOUR NETLIFY URL'
+                CI_ENVIRONMENT_URL = 'https://joyful-baklava-3280b2.netlify.app'
             }
-
             steps {
                 sh '''
-                    npx playwright test  --reporter=html
+                    npx playwright test --reporter=html
                 '''
             }
-
             post {
                 always {
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
