@@ -21,9 +21,7 @@ pipeline {
                 '''
             }
         }
-    }
-}
-/*
+
         stage('Build') {
             agent {
                 docker {
@@ -114,7 +112,7 @@ pipeline {
             }
         }
         */
-/*
+
         stage('Deploy Prod') {
             agent {
                 docker {
